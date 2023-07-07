@@ -6,15 +6,29 @@ import Toolbar from "@mui/material/Toolbar";
 import Button from "@mui/material/Button";
 import axios from "axios";
 import BodyComponent from "./BodyComponent";
+import Logo from "./logo.jfif";
+import { useLocation, useNavigate } from "react-router";
 
-export default function HeaderComponent() {
+function HeaderComponent() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [categoryList, setCategoryList] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCategoryBlogs, setSelectedCategoryBlogs] = useState([]);
   useEffect(() => {
     axios.get("https://backend.kodehash.com/blog/category").then((res) => {
-      setCategoryList(res.data.data.data);
-      setSelectedCategory(res.data.data.data[0]);
+      let data = res.data.data.data;
+      setCategoryList(data);
+
+      let params = location?.pathname?.split("/");
+      let id = parseInt(params[1]);
+
+      if (!!id) {
+        setSelectedCategory(data.find((e) => e.id === id));
+      } else {
+        setSelectedCategory(data[0]);
+      }
     });
   }, []);
 
@@ -30,8 +44,18 @@ export default function HeaderComponent() {
     }
   }, [selectedCategory?.id]);
 
+  useEffect(() => {
+    let params = location?.pathname?.split("/");
+    let id = parseInt(params[1]);
+    if (!!id && !!selectedCategory?.id && id !== selectedCategory?.id) {
+      onChangeCategory(id);
+    }
+  }, [location]);
+
   const onChangeCategory = (id) => {
-    setSelectedCategory(categoryList.find((e) => e.id === id));
+    navigate(`/${id}`);
+    let category = categoryList.find((e) => e.id === id);
+    setSelectedCategory(category);
   };
 
   return (
@@ -40,7 +64,8 @@ export default function HeaderComponent() {
         <CssBaseline />
         <AppBar component="nav">
           <Toolbar>
-            <Box>
+            <Box display="flex" alignItems="center">
+              <img src={Logo} style={{ width: "32px", height: "32px" }} />
               {categoryList?.map((item) => (
                 <Button
                   key={item.id}
@@ -58,9 +83,12 @@ export default function HeaderComponent() {
           <BodyComponent
             blogList={selectedCategoryBlogs}
             categoryId={selectedCategory?.id}
+            categoryName={selectedCategory?.name}
           />
         </Box>
       </Box>
     </>
   );
 }
+
+export default HeaderComponent;
