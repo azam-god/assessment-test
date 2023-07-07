@@ -7,16 +7,30 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import DOMPurify from "dompurify";
 import axios from "axios";
+import { useLocation, useNavigate } from "react-router";
 
 export default function BodyComponent(props) {
-  const { blogList, categoryId } = props;
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const { blogList, categoryId, categoryName } = props;
   const [selectedPost, setSelectedPost] = useState(blogList[0]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    setSelectedPost(blogList[0]);
-    setCurrentIndex(0);
-    console.log(blogList[0], categoryId);
+    let params = location?.pathname?.split("/");
+    let slug = params[2];
+    if (!!slug) {
+      let index = blogList.findIndex((e) => e.slug === slug);
+      setSelectedPost(blogList[index]);
+      setCurrentIndex(index);
+    } else if (categoryName === blogList[0]?.category) {
+      setSelectedPost(blogList[0]);
+      setCurrentIndex(0);
+      if (!!categoryId && !!blogList[0]) {
+        navigate(`/${categoryId}/${blogList[0]?.slug}`);
+      }
+    }
   }, [blogList.length, categoryId, blogList[0]?.id]);
 
   // useEffect(() => {
@@ -36,16 +50,19 @@ export default function BodyComponent(props) {
     let index = blogList.findIndex((e) => e.id === id);
     setSelectedPost(blogList[index]);
     setCurrentIndex(index);
+    navigate(`/${categoryId}/${blogList[index]?.slug}`);
   };
 
   const backClick = () => {
     setSelectedPost(blogList[currentIndex - 1] ?? null);
     setCurrentIndex(currentIndex - 1);
+    navigate(`/${categoryId}/${blogList[currentIndex - 1]?.slug}`);
   };
 
   const nextClick = () => {
     setSelectedPost(blogList[currentIndex + 1] ?? null);
     setCurrentIndex(currentIndex + 1);
+    navigate(`/${categoryId}/${blogList[currentIndex + 1]?.slug}`);
   };
 
   return (
@@ -73,7 +90,7 @@ export default function BodyComponent(props) {
           <div
             style={{ padding: "10px", fontSize: "17px", textAlign: "center" }}
             dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(selectedPost?.long_description)
+              __html: DOMPurify.sanitize(selectedPost?.long_description),
             }}
           ></div>
           <Box display="flex">
